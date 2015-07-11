@@ -9,8 +9,9 @@
 	<script type="text/javascript" src='static/js/d3.js'></script>
 
 	<script type="text/javascript" src='static/js/mapbox.js'></script>
+	<script type="text/javascript" src='static/js/leaflet-heat.js'></script>
 	<script type="text/javascript" src='static/js/angular.min.js'></script>
-	<script type="text/javascript" src='static/js/angular-leaflet-directive.min.js'></script>
+	<script type="text/javascript" src='static/js/angular-leaflet-directive.js'></script>
 	<link rel="stylesheet" type="text/css" href='static/css/mapbox.css'></link>
 
 	<link rel="stylesheet" type="text/css" href='static/css/main.css'></link>
@@ -38,7 +39,13 @@
 							Station Map
 						</md-tab-label>
 						<md-tab-body class='md-padding'>
-							<leaflet layers='layers' center='dc' markers="stations" paths="route" maxbounds='maxbounds' defaults='defaults'  style='width: 100%; height: 800px'></leaflet>
+							<leaflet layers='layers' center='dc' markers="stations" paths="route" maxbounds='maxbounds' defaults='defaults'  style='width: 100%; height: 700px'></leaflet>
+							<div layout>
+								<div flex='10' layout layout-align='center center'>
+									 <span class="md-body-1">interval</span>
+								</div>
+								<md-slider flex md-discrete ng-model='heat.interval' step='1' min='0' max='23'></md-slider>
+							</div>
 						</md-tab-body>
 					</md-tab>
 
@@ -56,13 +63,14 @@
 			</md-content>
 		</div>
 
-		<div ng-controller="ChartsController" id='charts-container'>
+
+		<!-- <div ng-controller="ChartsController" id='charts-container'>
 			<md-content class='md-padding'>
 				<c3chart id="day-by-hour" bindto-id="day-by-hour-chart" chart-data="day_by_hour.data" chart-columns="day_by_hour.cols" chart-x="day_by_hour.axis"></c3chart>
 				<c3chart id="week-by-day" bindto-id="week-by-day-chart" chart-data="week_by_day.data" chart-columns="week_by_day.cols" chart-x="week_by_day.axis"></c3chart>
 				<c3chart id="year-by-week" bindto-id="year-by-week-chart" chart-data="year_by_week.data" chart-columns="year_by_week.cols" chart-x="year_by_week.axis"></c3chart>
 			</md-content>
-		</div>
+		</div> -->
 	</div>
 </body>
 </html>

@@ -2,11 +2,15 @@
 var mapApp = angular.module('mapApp', ['leaflet-directive', 'ngMaterial', 'gridshore.c3js.chart']);
 
 mapApp.factory('stationData', function ($q, $http) {
-	var geoJSON;
+	var stations;
 	return {
 		get: function () {
 			var deferred = $q.defer();
-			if (!geoJSON) {
+			if (stations) {
+				$timeout(function () {
+					deferred.resolve(stations);
+				}, 20);
+			} else {
 				$http.get('/station_data'
 				).success(function (data, status, headers, response) {
 					geoJSON = data;
@@ -14,8 +18,6 @@ mapApp.factory('stationData', function ($q, $http) {
 				}).error(function (data, status, headers, response) {
 					deferred.reject(status);
 				});
-			} else {
-				deferred.resolve(geoJSON);
 			}
 
 			return deferred.promise;
@@ -87,7 +89,34 @@ mapApp.factory('bikeDirections', function ($q, $http) {
 	}
 });
 
-mapApp.controller('MainController', function ($scope, $rootScope, $q, bikeRides, stationData, bikeDirections, leafletEvents) {
+mapApp.factory('bikeRideInterval', function ($q, $http, $timeout) {
+	return {
+		get: function (t_start, t_end, t_interval, station) {
+			// YYYY-mm-dd HH:MM:SS, --''--, dd:hh:mm:ss, [station id]
+			var deferred = $q.defer();
+			$http({
+				url: '/bike_rides_interval',
+				method: 'GET',
+				params: {
+					t_start: t_start,
+					t_end: t_end,
+					t_interval: t_interval,
+					station: station
+				}
+			}).success(function (data, status, headers, response) {
+				deferred.resolve(data);
+			}).error(function (data, status, headers, response) {
+				deferred.reject(status);
+			});
+
+			return deferred.promise;
+		}
+	};
+});
+
+
+// removed leafletEvents from injection
+mapApp.controller('MainController', function ($scope, $timeout, $rootScope, $q, bikeRides, stationData, bikeDirections, bikeRideInterval, leafletEvents) {
 	stationData.get().then(function (data) {
 		$scope.stations = {};
 		for (var i = 0; i < data.features.length; i++) {
@@ -117,6 +146,11 @@ mapApp.controller('MainController', function ($scope, $rootScope, $q, bikeRides,
 		route: {},
 		layers: {
 			baselayers: {
+				simple_grey: {
+					name: 'Simple (Greyscale)',
+					url: 'http://127.0.0.1:8080/simple_grey/{z}/{x}/{y}.png',
+					type: 'xyz'
+				},
 				simple: {
 					name: "Simple",
 					url: 'http://127.0.0.1:8080/simple/{z}/{x}/{y}.png',
@@ -150,6 +184,45 @@ mapApp.controller('MainController', function ($scope, $rootScope, $q, bikeRides,
 		}
 	});
 
+	$scope.heat = { interval: 0 };  // default
+	bikeRideInterval.get('2014-06-01 00:00:00', '2014-06-02 00:00:00', '00:1:00:00', []).then(function (data) {
+		$scope.heat.num_intervals = 24;
+		$scope.heat.data = {};
+		for (var x in data) {
+			$scope.heat.data[Number(x)] = data[x].map(function (e) {
+				return [e.lat, e.lng];
+			});
+		}
+
+		$scope.layers.overlays = {
+			heat: {
+				name: 'Heat Map',
+				type: 'heat',
+				data: $scope.heat.data[$scope.heat.interval],
+				layerOptions: {
+					radius: 20,
+					blur: 50,
+					gradient: {
+						0.2: "#ffffb2",
+						0.4: "#fd8d3c",
+						0.6: "#fd8d3c",
+						0.8: "#f03b20",
+						1: "#bd0026"
+					}
+				},
+				visible: true
+			}
+		};
+
+		return 1;
+	}).then(function () {
+		$scope.$watch('heat.interval', function (new_interval) {
+			console.log($scope.heat.interval);
+			$scope.layers.overlays.heat.data = $scope.heat.data[1];
+			console.log($scope.layers);
+		});
+	});
+
 	var selectedPath = false;
 	var station1 = null;
 	$scope.$on('leafletDirectiveMarker.click', function (ev, payload) {
@@ -163,14 +236,15 @@ mapApp.controller('MainController', function ($scope, $rootScope, $q, bikeRides,
 			// classes on click...kind of an oversight. i opened an issue
 			d3.selectAll('.station-clicked').classed('station-clicked', false);
 			d3.select('#marker_' + station1).classed('station-clicked', true);
-			// /<BAD BAD BAD BAD BAD>
+			// </BAD BAD BAD BAD BAD>
+
 		} else {
 			var station2 = payload.model.id;
 			$rootScope.$emit('station_path', [station1, station2]);
 
-			// <BAD>
+			// <BAD BAD BAD BAD BAD>
 			d3.select('#marker_' + station2).classed('station-clicked', true);
-			// </BAD>
+			// </BAD BAD BAD BAD BAD>
 
 			bikeDirections.get(station1, station2).then(function (data) {
 				$scope.route = {
@@ -183,20 +257,6 @@ mapApp.controller('MainController', function ($scope, $rootScope, $q, bikeRides,
 						})
 					}
 				};
-
-				// not working right now, nothing gets appended
-				/*
-				if (!selectedPath) {
-					var svg = d3.select('svg');
-					var defs = svg.append('defs');
-					defs.append('filter')
-						.attr("id", "glow")
-						.attr("stdDeviation", 50)
-						.attr("in", "SourceGraphic");
-					svg.select('path').attr("filter", "url(#glow)");
-					selectedPath = true;
-				}
-				*/
 
 				return 1;
 			}).then(function (data) {

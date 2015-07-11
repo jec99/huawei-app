@@ -84,3 +84,10 @@ class Location(Base):
 	geom = Column(Geometry('POINT'))
 
 
+class Checkin(Base):
+	__tablename__ = 'checkins'
+	id = Column(Integer, primary_key=True)
+	user_id = Column(Integer)
+	date = Column(DateTime)
+	geom = Column(Geometry(geometry_type='POINT', srid=4326))
+

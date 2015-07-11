@@ -214,3 +214,13 @@ finds route from one point to another:
 localhost:5080/viaroute?loc=38.888928,-77.034136&loc=38.928734,-77.003923
 
 the important part needs to be decoded with polyline (pip install polyline)
+
+--------------------------------
+
+important in postgres: creating indices
+run
+
+# create index _whatever_ on bike_rides (start_station_id);
+# create index _whatever_ on bike_rides (end_station_id);
+
+it'll speed up the queries by so much
