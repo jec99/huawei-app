@@ -1,0 +1,26 @@
+
+.network {
+	/*position: relative;*/
+	display: block;
+	width: 800px;
+	height: 800px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.node {
+	cursor: pointer;
+	stroke: #3182bd;
+	stroke-width: 1.5px;
+	fill: #3182bd;
+}
+
+.edge {
+	/*fill: none;*/
+	stroke: #9ecae1;
+	/*stroke-width: 1.5px;*/
+}
+
+#network-viz-1 #background {
+	fill: white;
+}
